@@ -11,6 +11,9 @@
 (def F3 {:freq 2600.0 :Amp 5.2 :BW 110.0})
 (def sox-path "c:\\sox-14-4-1\\rec.exe") ;directory and file name of sox14-4-1 recording program
 
+(def points (atom {:x [] :y [] :time []}))
+;(def y (atom []))
+
 (def F1range [200 900])
 (def F2range [500 2600])
 (def Time (atom (Now)))

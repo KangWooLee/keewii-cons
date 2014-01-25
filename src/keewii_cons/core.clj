@@ -23,6 +23,7 @@
 
 ;xy plot in 4th tab
 (osc-handle server "/4/xy" (fn [msg](println msg) (vowel-xy f1 f2 (seq (:args msg)))))
+(osc-handle server "/4/toggle4" (fn [msg](println msg) (plotting-points (first (:args msg))) ))
 (osc-handle server "/4/toggle5" (fn [msg](println msg) (enable-play (first (:args msg))))) ;play&stop toggle
 
 ;(osc-close client)

@@ -1,7 +1,9 @@
 (ns keewii_cons.toolbox
   (:require [clojure.java.io :as io])
   (:use [overtone.live]
-        [keewii_cons.basic_setting]))
+        [keewii_cons.basic_setting]
+        [incanter.charts]
+        [incanter.core :only (view)]))
 
 (def vowel (ref {:t 100 :fa 750.0 :fb 1000.0 :fc 2600.0 :vol 1.0}))
 
@@ -54,14 +56,30 @@
 ;(defn copy-file [source-path dest-path]
 ;  (io/copy (io/file source-path) (io/file dest-path)))
 (defn save-temp-wav [recorder-path temp-path]
+  (let [recording-info (str "cmd /c " recorder-path " -c 2 " temp-path "temp.wav") ;error because of user name 
+        ;recording-info (str "cmd /c " recorder-path " -c 2 c:\\temp.wav") 
+        ]
   "This function passes a command to record a wave file by sox-14-4-1 program"
   ;(str "cmd /c " recorder-path " -c 2 " temp-path "temp.wav trim 0 5")
-  (str "cmd /c " recorder-path " -c 2 " temp-path "temp.wav")
-  (printf (str "cmd /c " recorder-path " -c 2 " temp-path "temp.wav"))
-  )
+    (. (java.lang.Runtime/getRuntime) exec recording-info)
+  ;(println (str "cmd /c " recorder-path " -c 2 c:\\temp.wav"))
+  ))
 (defn save-temp-data [time freq_a freq_b]
   (let [temp-path (str (cur_dir) "\\temp\\")] 
       (spit (str temp-path "temp.txt") (str time " " freq_a " " freq_b "\n")  :append true))); vowel-showed cursor-f1 cursor-f2
+(defn save-data-memory [time x1 y1]
+  (let [deref_points (deref points)
+         xx (deref_points :x)
+         yy (deref_points :y)
+         tt (deref_points :time)
+         ]
+     (reset! points {:x (conj xx x1) :y (conj yy y1) :time (conj tt time)})
+     ))
+(defn plotting-points [val]
+  (if (= val 1.0) 
+    (view (scatter-plot ((deref points) :time) ((deref points) :x) :x-label "time(ms)" :y-label "x"))
+    (view (scatter-plot ((deref points) :time) ((deref points) :y) :x-label "time(ms)" :y-label "y"))
+    ))
 
 (defn vowel-xy
   [fa fb val]
@@ -70,10 +88,11 @@
         y_freq (+ (* -1.0 (second val)) 1.0)
         newfreq_a (scale-range x_freq 0 1 (F1range 0) (F1range 1))
         newfreq_b (scale-range y_freq 0 1 (F2range 0) (F2range 1))
-        time (now)]
+        time (/ (- (now) @Time) 1000)]
   (doseq [] 
     (ctl fa :freq newfreq_a)
     (ctl fb :freq newfreq_b)
+    (save-data-memory time (first val) (second val))
     (save-temp-data time newfreq_a newfreq_b))))
 
 
@@ -86,7 +105,8 @@
   (let [temp-path (str (cur_dir) "\\temp\\")]
     (if (= val 1.0) 
       (doseq [] (f1 750)(f2 1000)(f3 2890)(reset! Time (now))
-        (save-temp-wav sox-path temp-path))
+        (save-temp-wav sox-path temp-path)
+        (reset! points {:x [] :y []}))
       (doseq [] (. (java.lang.Runtime/getRuntime) exec "taskkill /F /IM  rec.exe")(stop)))
     
   ))
